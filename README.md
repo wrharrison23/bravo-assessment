@@ -9,4 +9,4 @@ This app provides a user interface to interact with sample data provided by the 
 Users can add to the dataset, and edit and delete rows within the datatable. Functionality for searching, sorting, and pagination is also provided. 
 
 
-## Link: https://wrharrison23.github.io/bravo-datatable/
+## Link: https://wrharrison23.github.io/bravo-assessment/
