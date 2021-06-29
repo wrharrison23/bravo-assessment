@@ -1,21 +1,17 @@
-import { getUsers } from "./provider.js";
-console.log("Welcome to the main module");
+import { setData, getData } from "./provider.js";
 
-export function fnLoadDataTableInstance() {
+export function LoadDataTable() {
   $("#userDataTable").dataTable({
     dom: "Blfrtip",
-    ajax: function (data, callback, settings) {
-      callback({ data: JSON.parse(localStorage.getItem("users")) }); //reloads data
-    },
+    data: JSON.parse(localStorage.getItem("users")),
     rowId: "id",
     columns: [
       { data: "last", class: "editable text" },
       { data: "first", class: "editable text" },
       {
         data: "phone",
-        render: function (data) {
-          return data.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');
-        },
+        class: "editable text",
+        orderable: false,
       },
       { data: "email", class: "editable text", orderable: false },
       {
@@ -33,7 +29,7 @@ export function fnLoadDataTableInstance() {
       },
       {
         render: function (data, type, row) {
-          return createButton("delete", this);
+          return createButton("delete", row.id);
         },
         orderable: false,
       },
@@ -51,21 +47,13 @@ export function fnLoadDataTableInstance() {
   });
 }
 
-function createButton(buttonType, rowId) {
-  var buttonText = buttonType == "edit" ? "Edit" : "Delete";
-  return `<button id=${rowId} class="${buttonType}" type="button">
-    ${buttonText}</button>`;
-}
-
 $("#userDataTable").on("click", "tbody td .edit", function (e) {
-  fnResetControls();
-  var dataTable = $("#userDataTable").DataTable();
+  removeInputFields();
+  //Searches row targeted by user, replaces existing cells value with an input field if the cell is designated as editable
   var clickedRow = $($(this).closest("td")).closest("tr");
-  console.log(clickedRow);
   $(clickedRow)
     .find("td")
     .each(function () {
-      // do your cool stuff
       if ($(this).hasClass("editable")) {
         if ($(this).hasClass("text")) {
           var html = fnCreateTextBox($(this).html(), "name");
@@ -73,6 +61,8 @@ $("#userDataTable").on("click", "tbody td .edit", function (e) {
         }
       }
     });
+
+  //Replaces "Edit" and "Delete" buttons with "Update" and "Cancel" buttons, if another row shows "Update" and "Cancel" buttons does opposite
   $("#userDataTable tbody tr td .update")
     .removeClass("update")
     .addClass("edit")
@@ -93,6 +83,88 @@ $("#userDataTable").on("click", "tbody td .edit", function (e) {
     .html("Cancel");
 });
 
+$("#userDataTable").on("click", "tbody td .delete", function (e) {
+  //Finds row associated with clicked delete button, gets row id,
+  var clickedRow = $($(this).closest("td")).closest("tr");
+  var id = clickedRow[0].id;
+
+  //Get dataset from localstorage, set new array to localstorage without object deleted by user
+  var users = getData();
+  for (var i = 0; i < users.length; i++) {
+    if (users[i].id === id) {
+      users.splice(i, 1);
+    }
+  }
+  setData(users);
+
+  //Clear data form table, update with new array
+  var table = $("#userDataTable").DataTable();
+  table.clear().rows.add(users).draw();
+});
+
+$("#userDataTable").on("click", "tbody td .cancel", function (e) {
+  removeInputFields();
+  //Dismiss any inputs by refreshing table data
+  var users = getData();
+  var table = $("#userDataTable").DataTable();
+  table.clear().rows.add(users).draw();
+});
+
+$("#userDataTable").on("click", "tbody td .update", function (e) {
+  var openedTextBox = $("#userDataTable").find("input");
+  let newData = [];
+  //Loop through inputs, add input values to array, set cell value = input,
+  $.each(openedTextBox, function (k, $cell) {
+    newData.push($cell.value);
+    updateCellValue($cell, $cell.value);
+  });
+
+  //Get input values from array, update user in dataset with new values, set new array to local storage, redraw table with updated data
+  var clickedRow = $($(this).closest("td")).closest("tr");
+  var id = clickedRow[0].id;
+  var users = getData();
+  for (var i = 0; i < users.length; i++) {
+    if (users[i].id === id) {
+      users[i].last = newData[0];
+      users[i].first = newData[1];
+      users[i].phone = newData[2];
+      users[i].email = newData[3];
+    }
+  }
+  setData(users);
+  var table = $("#userDataTable").DataTable();
+  table.clear().rows.add(users).draw();
+
+  $("#userDataTable tbody tr td .update")
+    .removeClass("update")
+    .addClass("edit")
+    .html("Edit");
+  $("#userDataTable tbody tr td .cancel")
+    .removeClass("cancel")
+    .addClass("delete")
+    .html("Delete");
+});
+
+// Creates edit or delete button, called by render functions
+function createButton(buttonType, rowId) {
+  var buttonText = buttonType == "edit" ? "Edit" : "Delete";
+  var buttonClass =
+    buttonType === "edit"
+      ? `edit btn btn-outline-secondary`
+      : "delete btn btn-outline-danger";
+  return `<button id=${rowId} class="${buttonClass}" type="button">
+    ${buttonText}</button>`;
+}
+
+function updateCellValue($inputCell, value) {
+  //Change cell value to input value
+  var dataTable = $("#userDataTable").DataTable();
+  var rowIndex = dataTable.row($($inputCell).closest("tr")).index();
+  var fieldName = $($inputCell).attr("data-field");
+
+  dataTable.rows().data()[rowIndex][fieldName] = value;
+}
+
 function fnCreateTextBox(value, fieldprop) {
   return (
     '<input data-field="' +
@@ -103,91 +175,10 @@ function fnCreateTextBox(value, fieldprop) {
   );
 }
 
-$("#userDataTable").on("click", "tbody td .delete", function (e) {
-  var clickedRow = $($(this).closest("td")).closest("tr");
-  var id = clickedRow[0].id;
-  var users = JSON.parse(localStorage.getItem("users"));
-  for (var i = 0; i < users.length; i++) {
-    if (users[i].id === id) {
-      users.splice(i, 1);
-    }
-  }
-  localStorage.setItem("users", JSON.stringify(users));
-  var table = $("#userDataTable").DataTable();
-  table.clear().rows.add(users).draw();
-});
-$("#userDataTable").on("click", "tbody td .cancel", function (e) {
-  fnResetControls();
-  $("#userDataTable tbody tr td .update")
-    .removeClass("update")
-    .addClass("edit")
-    .html("Edit");
-  $("#userDataTable tbody tr td .cancel")
-    .removeClass("cancel")
-    .addClass("delete")
-    .html("Delete");
-});
-
-function fnResetControls() {
+//Remove input fields
+function removeInputFields() {
   var openedTextBox = $("#userDataTable").find("input");
   $.each(openedTextBox, function (k, $cell) {
     $(openedTextBox[k]).closest("td").html($cell.value);
   });
 }
-
-$("#userDataTable").on("click", "tbody td .update", function (e) {
-  var openedTextBox = $("#userDataTable").find("input");
-  let newData = [];
-  $.each(openedTextBox, function (k, $cell) {
-    debugger;
-    newData.push($cell.value);
-    fnUpdateDataTableValue($cell, $cell.value);
-    $(openedTextBox[k]).closest("td").html($cell.value);
-  });
-  var clickedRow = $($(this).closest("td")).closest("tr");
-  var id = clickedRow[0].id;
-  var users = JSON.parse(localStorage.getItem("users"));
-  for (var i = 0; i < users.length; i++) {
-    if (users[i].id === id) {
-      users[i].last = newData[0];
-      users[i].first = newData[1];
-      users[i].phone = newData[2];
-      users[i].email = newData[3];
-    }
-  }
-  localStorage.setItem("users", JSON.stringify(users));
-  var table = $("#userDataTable").DataTable();
-  table.clear().rows.add(users).draw();
-  $("#userDataTable tbody tr td .update")
-    .removeClass("update")
-    .addClass("edit")
-    .html("Edit");
-  $("#userDataTable tbody tr td .cancel")
-    .removeClass("cancel")
-    .addClass("delete")
-    .html("Delete");
-});
-
-function fnUpdateDataTableValue($inputCell, value) {
-  var dataTable = $("#userDataTable").DataTable();
-  var rowIndex = dataTable.row($($inputCell).closest("tr")).index();
-  console.log(rowIndex);
-  var fieldName = $($inputCell).attr("data-field");
-
-  dataTable.rows().data()[rowIndex][fieldName] = value;
-}
-
-const deleteRow = (value) => {
-  debugger;
-  var users = JSON.parse(localStorage.getItem("users"));
-  for (var i = 0; i < users.length; i++) {
-    if (users[i].id === value) {
-      users.splice(i, 1);
-    }
-  }
-  localStorage.setItem("users", JSON.stringify(users));
-  var table = $("#userDataTable").DataTable();
-  table.clear().rows.add(users).draw();
-  // $("#userDataTable").DataTable().data(newArray);
-  debugger;
-};
