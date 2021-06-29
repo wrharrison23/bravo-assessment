@@ -3,7 +3,7 @@ export const getUsers = () => {
   var users = JSON.parse(localStorage.getItem("users") || "[]");
   if (users.length === 0) {
     return $.ajax({
-      url: "https://randomuser.me/api/?results=20&inc=name,email,phone,registered,login&noinfo&seed=foobar",
+      url: "https://randomuser.me/api/?results=150&inc=name,email,phone,registered,login&noinfo&seed=foobar",
       dataType: "json",
       success: function (data) {
         let users = [];
@@ -21,5 +21,13 @@ export const getUsers = () => {
         localStorage.setItem("users", JSON.stringify(users));
       },
     });
-  } else return Promise.reject("Data already in memory");
+  } else return Promise.resolve(console.log("Data ready"));
 };
+
+export const setData = (data) => {
+  localStorage.setItem("users", JSON.stringify(data))
+}
+
+export const getData = () => {
+  return JSON.parse(localStorage.getItem("users"));
+}

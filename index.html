@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>NewForce</title>
+        <title>Harrison - Bravo Assessment</title>
         <script type="module" src="./scripts/main.js"></script>
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.1/css/bootstrap.css"/>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.css"/>
@@ -14,15 +14,14 @@
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
     </head>
 
     <body>
         
         <main id="container">
-      <div id="userModal"></div>
-       
-            <table id="userDataTable" class="display table table-striped" style="width:100%">
+       <div class="table-responsive">
+            <table id="userDataTable" class="table table-striped dt-responsive nowrap" style="width:100%">
                 
                 <thead>
                     <tr>
@@ -36,7 +35,7 @@
                     </tr>
                 </thead>
             </table>
-            
+            </div>
         </main>
         
     </body>
